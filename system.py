@@ -27,7 +27,7 @@ class System:
         d_norm = np.linalg.norm(d_vector)
         m1 = particle1.mass
         m2 = particle2.mass
-        to_return = G * m1 * m2 * d_norm ** -3 * d_vector
+        to_return = -G * m1 * m2 * d_norm ** -3 * d_vector
         return to_return 
 
 
@@ -69,6 +69,14 @@ class System:
         position[:,0] = position[:,0] + state[:,0]
         position[:,1] = position[:,1] + state[:,1]
         return position
+
+    def update_states(self):
+        state = self.state
+        particles = self.particles
+        particle_positions = self.positions()
+        for i in range(len(particles)):
+            particles[i].position()[0] = particle_positions[i,0]
+            particles[i].position()[1] = particle_positions[i,1]
 
 class Particle:
     """
