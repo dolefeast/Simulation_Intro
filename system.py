@@ -1,19 +1,23 @@
 import numpy as np
+
 class System:
     def __init__(self, 
             *particles, 
             force_constant = 8,
             origin = (0,0), dt = 1/30):
         self.particles = particles
+        masses = []
         init_state = []
         for particle in particles:
             init_state.append(particle.state)
+            masses.append(particle.mass)
         self.init_states = np.array(init_state)
+        self.masses = np.array(masses)
         self.origin = origin
         self.time_elapsed = 0
         self.dt = dt
         self.G = force_constant
-        self.states = self.init_states
+        self.state = self.init_states
     
     def get_atraction_force(self, particle1, particle2, G):
         """
@@ -23,7 +27,9 @@ class System:
         d_norm = np.linalg.norm(d_vector)
         m1 = particle1.mass
         m2 = particle2.mass
-        return G * m1 * m2 * d_norm ** -3 * d_vector
+        to_return = G * m1 * m2 * d_norm ** -3 * d_vector
+        return to_return 
+
 
     def total_force(self):
         """
@@ -31,18 +37,39 @@ class System:
         """
         G = self.G
         particles = self.particles
-        states = self.states
-        forces = np.zeros_like(states)
+        state = self.state
+        forces = [[0,0]]*len(particles)
         for i in range(len(particles)):
             for j in range(len(particles)):
                 if j == i:
                     continue
                 forces[i] += self.get_atraction_force(particles[i],
-                        particles[j], G)
-        return forces
+                        particles[j], G)/particles[i].mass
+        return np.array(forces)
+    
+    def dstate_dt(self):
+        state = self.state
+        total_force = self.total_force()
+        dydx = np.zeros_like(state)
+        dydx[:,0] += state[:,2]
+        dydx[:,1] += state[:,3]
+        dydx[:,2] += total_force[:,0]
+        dydx[:,3] += total_force[:,1]
+        return dydx
 
-    def step(self, dt):
-        return 
+    def step(self):
+        dt = self.dt
+        self.state = self.state + self.dstate_dt() * dt
+        self.time_elapsed += dt
+
+    def positions(self):
+        state = self.state
+        particles = self.particles
+        position = np.array([[0, 0]]*len(particles))
+        position[:,0] = position[:,0] + state[:,0]
+        position[:,1] = position[:,1] + state[:,1]
+        return position
+
 class Particle:
     """
     Particle class
@@ -59,15 +86,16 @@ class Particle:
         dstade_dt
         step        
     """
-    def __init__(self,
+    def __init__(self, name,
                 init_state = [0, 10, 10, 0],
                 m = 20):
         self.init_state = np.asarray(init_state, dtype='float')
         self.mass = m
         self.time_elapsed = 0
         self.state = self.init_state
+        self.name = name
     def position(self):
-        return self.state[0:1]
+        return self.state[0:2]
     def speed(self):
         return self.state[2:3]
     """ 
@@ -95,15 +123,3 @@ class Particle:
         dydx[3] = g[1]
         return dydx
    """ 
-    
-    
-    
-
-    
-    
-
-
-    
-    
-    
-    
